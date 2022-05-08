@@ -9,35 +9,41 @@ from PIL import ImageTk, Image
 
 API_KEY = "k_t3f76pdi"
 
-def detailsWindow(movie: dict, parent: Tk):
-    state = []
-    root = Tk()
+def sourceImage(url: str, size: tuple[int, int]):
+    x, y = size
+    if 'amazon' in url: jpg = Image.open(BytesIO(requests.get(url[0:url.find('@')] + f'@._V1_UX{x}_CR0,0,{x},{y}_AL_.jpg').content))
+    else: jpg = Image.open(BytesIO(requests.get(url.replace("original", f"{x}x{y}")).content))
+    
+    return ImageTk.PhotoImage(jpg)
+
+
+def detailsWindow(movie: dict, state: list, parent: Tk):
+    root = Toplevel(parent)
     root.title(movie['fullTitle'])
-    root.geometry("500x500")
+    root.geometry("800x600")
 
-    # root = Toplevel(parent)
-    # root.title(f'{movie["fullTitle"]} Details')
-    # root.geometry("800x500")
+    detailsFrame = Frame(root)
+    detailsFrame.grid()
 
-    # rootFrame = Frame(root)
-    # rootFrame.place(relx=.5, rely=.5, anchor=CENTER)
+    bytes = sourceImage(movie['image'], (168, 231))
+    state.append(bytes)
+    thumbnail = Label(detailsFrame, image=bytes)
+    thumbnail.grid(row=0, column=0)
 
-    # movieFrame = Frame(rootFrame)
-    # movieFrame.grid()
-            
-    # root.mainloop()
+    label = Label(detailsFrame, text=movie['title'])
+    label.grid(row=0, column=1)
 
-def details(id: str, parent: Tk):
+
+def details(id: str, state: list, parent: Tk):
     res = requests.get(f"https://imdb-api.com/en/API/Title/{API_KEY}/{id}/Images,Ratings")
     
     if res.status_code != 200:
         print("\nError:", res.status_code)
     elif not res.json()['id']:
         print(f"\nError: {res.json()['errorMessage']}")
-        return
     else:
         movie = res.json()
-        detailsWindow(movie, parent)
+        detailsWindow(movie, state, parent)
 
 
 def previewWindow(movie: dict):
@@ -52,8 +58,7 @@ def previewWindow(movie: dict):
     previewFrame = Frame(rootFrame)
     previewFrame.grid()
     
-    jpg = Image.open(BytesIO(requests.get(movie['image'].replace("original", "336x462")).content))
-    bytes = ImageTk.PhotoImage(jpg)
+    bytes = sourceImage(movie['image'], (336, 462))
     state.append(bytes)
     thumbnail = Label(previewFrame, image=bytes)
     thumbnail.grid(row=0)
@@ -63,7 +68,7 @@ def previewWindow(movie: dict):
     title.config(font="Arial 24 bold")
     title.grid(row=1)
 
-    moreInfo = Button(previewFrame, text="View More", command=lambda: details(movie['id'], parent=root))
+    moreInfo = Button(previewFrame, text="View More", command=lambda: details(movie['id'], state, parent=root))
     moreInfo.grid(row=2)
 
     root.mainloop()
@@ -73,15 +78,14 @@ def preview(data: dict):
     print()
     
     while True:
-        inp = input("View a title (enter # or 'done'): ")
+        inp = input("Preview a title (enter # or 'done'): ")
         
         if "done" in inp.lower(): break
 
-        if inp.isdigit(): inp = int(inp)
-        
-        if inp <= 0 or inp > len(data): continue
-        
-        previewWindow(data[int(inp)-1])
+        if inp.isdigit(): 
+            inp = int(inp)
+            if inp > 0 or inp <= len(data): 
+                previewWindow(data[inp-1])
 
 
 def search(title: str):
@@ -93,7 +97,6 @@ def search(title: str):
         print("\nError:", res.status_code)
     elif not res.json()['results']:
         print(f"\nError: {res.json()['errorMessage']}")
-        return
     else:
         data = res.json()['results']
         print("\nResults:")
@@ -109,7 +112,6 @@ def top100():
         print("\nError:", res.status_code)
     elif len(res.json()['items']) == 0:
         print(f"\nError: {res.json()['errorMessage']}")
-        return
     else:
         data = res.json()['items']
         for movie in data: print(f"\t{movie['rank']}: {movie['fullTitle']}")
