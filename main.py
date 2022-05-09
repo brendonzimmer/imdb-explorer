@@ -7,7 +7,7 @@ from tkinter import *
 from io import BytesIO
 from PIL import ImageTk, Image
 
-API_KEY = "k_t3f76pdi"
+API_KEY = "k_8cin941m1"
 
 def sourceImage(url: str, size: tuple[int, int]):
     x, y = size
