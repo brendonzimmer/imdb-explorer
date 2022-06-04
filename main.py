@@ -2,12 +2,15 @@
 # ITP 116, 11:00-11:50
 # Final Project — Movie Finder and Explorer
 
+import os
+from dotenv import load_dotenv
 import requests
 from tkinter import *
 from io import BytesIO
 from PIL import ImageTk, Image
+load_dotenv()
 
-API_KEY = "k_8cin941m"
+API_KEY = os.getenv("API_KEY")
 
 def sourceImage(url: str, size: tuple[int, int]):
     x, y = size
